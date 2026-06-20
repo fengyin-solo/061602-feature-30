@@ -1,5 +1,5 @@
 import { reactive, computed, watch } from 'vue'
-import type { GameState, Bird, Berry, GrowthStage, Personality, BerryType, Weather, GameScore } from '@/types/game'
+import type { GameState, Bird, Berry, GrowthStage, Personality, BerryType, Weather, GameScore, ComboState, CollectFeedback } from '@/types/game'
 import {
   ATTR_MIN, ATTR_MAX, DEATH_THRESHOLD,
   STAGE_DURATION, FOOD_NEED_MULTIPLIER,
@@ -8,6 +8,8 @@ import {
   BERRY_VALUES, WEATHER_CHANGE_INTERVAL, WEATHER_EFFECTS,
   DAY_DURATION, INITIAL_FOOD, MIN_EGGS, MAX_EGGS,
   MAX_BREEDING_ROUNDS, BIRD_NAMES,
+  COMBO_TIME_WINDOW, COMBO_MISCLICK_THRESHOLD, COMBO_MULTIPLIERS,
+  MAX_COMBO_MULTIPLIER, COLLECT_FEEDBACK_LIFETIME,
 } from '@/utils/constants'
 import { randomInt, randomFloat, clamp, randomChoice, generateId, chance } from '@/utils/random'
 import { saveGame, loadGame, clearSave } from '@/utils/storage'
@@ -26,6 +28,14 @@ const createInitialState = (): GameState => ({
   breedingCount: 0,
   maxBreedingRounds: MAX_BREEDING_ROUNDS,
   eventLog: [],
+  combo: {
+    count: 0,
+    lastCollectAt: 0,
+    multiplier: 1,
+  },
+  collectFeedbacks: [],
+  lastFoodStock: INITIAL_FOOD,
+  foodStockChangedAt: 0,
 })
 
 const state = reactive<GameState>(createInitialState())
@@ -151,6 +161,8 @@ const updateGame = (deltaMs: number) => {
   })
 
   cleanupExpiredBerries()
+  cleanupExpiredFeedbacks()
+  checkComboTimeout()
   checkGameEnd()
   saveGame(state)
 }
@@ -322,14 +334,83 @@ const cleanupExpiredBerries = () => {
   state.berries = state.berries.filter(b => now - b.spawnedAt < BERRY_LIFETIME)
 }
 
+const cleanupExpiredFeedbacks = () => {
+  const now = Date.now()
+  state.collectFeedbacks = state.collectFeedbacks.filter(f => now - f.createdAt < COLLECT_FEEDBACK_LIFETIME)
+}
+
+const checkComboTimeout = () => {
+  const now = Date.now()
+  if (state.combo.count > 0 && now - state.combo.lastCollectAt > COMBO_TIME_WINDOW) {
+    resetCombo()
+  }
+}
+
+const resetCombo = () => {
+  state.combo.count = 0
+  state.combo.multiplier = 1
+}
+
+const getComboMultiplier = (count: number): number => {
+  if (count >= 7) return MAX_COMBO_MULTIPLIER
+  return COMBO_MULTIPLIERS[count] || 1
+}
+
+const addCollectFeedback = (berry: Berry, combo: number, value: number, isComboBonus: boolean) => {
+  state.collectFeedbacks.push({
+    id: generateId(),
+    x: berry.x,
+    y: berry.y,
+    value,
+    type: berry.type,
+    combo,
+    isComboBonus,
+    createdAt: Date.now(),
+  })
+}
+
 const collectBerry = (berryId: string) => {
   const idx = state.berries.findIndex(b => b.id === berryId)
   if (idx === -1) return 0
 
+  const now = Date.now()
   const berry = state.berries[idx]
-  state.foodStock += berry.value
+
+  if (state.combo.count > 0) {
+    const timeSinceLast = now - state.combo.lastCollectAt
+    if (timeSinceLast < COMBO_MISCLICK_THRESHOLD) {
+      return 0
+    }
+    if (timeSinceLast <= COMBO_TIME_WINDOW) {
+      state.combo.count++
+    } else {
+      resetCombo()
+      state.combo.count = 1
+    }
+  } else {
+    state.combo.count = 1
+  }
+
+  state.combo.lastCollectAt = now
+  state.combo.multiplier = getComboMultiplier(state.combo.count)
+
+  const baseValue = berry.value
+  const finalValue = Math.round(baseValue * state.combo.multiplier)
+  const comboBonus = finalValue - baseValue
+
+  state.lastFoodStock = state.foodStock
+  state.foodStock += finalValue
+  state.foodStockChangedAt = now
+
   state.berries.splice(idx, 1)
-  return berry.value
+
+  addCollectFeedback(berry, state.combo.count, finalValue, false)
+
+  if (comboBonus > 0 && state.combo.count >= 2) {
+    addCollectFeedback(berry, state.combo.count, comboBonus, true)
+  }
+
+  return finalValue
 }
 
 const feedBird = (birdId: string, amount: number): boolean => {
@@ -506,5 +587,6 @@ export function useGameState() {
     tryLoadGame,
     allAdults,
     aliveCount,
+    resetCombo,
   }
 }

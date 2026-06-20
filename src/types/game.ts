@@ -56,6 +56,10 @@ export interface GameState {
   eventLog: { id: string; message: string; type: string; timestamp: number }[]
   score?: GameScore
   selectedBirdId?: string
+  combo: ComboState
+  collectFeedbacks: CollectFeedback[]
+  lastFoodStock: number
+  foodStockChangedAt: number
 }
 
 export interface GameScore {
@@ -66,6 +70,23 @@ export interface GameScore {
   personalityBonus: number
   stars: number
   rank: string
+}
+
+export interface ComboState {
+  count: number
+  lastCollectAt: number
+  multiplier: number
+}
+
+export interface CollectFeedback {
+  id: string
+  x: number
+  y: number
+  value: number
+  type: BerryType
+  combo: number
+  isComboBonus: boolean
+  createdAt: number
 }
 
 export interface WeatherEffect {

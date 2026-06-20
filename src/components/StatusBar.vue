@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { GameState } from '@/types/game'
 import { WEATHER_NAMES } from '@/utils/constants'
 
@@ -15,6 +15,27 @@ const weatherClass = computed(() => {
     case 'stormy': return 'bg-gradient-to-r from-purple-600/30 to-gray-700/30'
   }
 })
+
+const foodPulse = ref(false)
+const foodChange = ref(0)
+const showFoodChange = ref(false)
+
+watch(
+  () => props.state.foodStock,
+  (newVal, oldVal) => {
+    if (oldVal !== undefined && newVal > oldVal) {
+      foodChange.value = newVal - oldVal
+      foodPulse.value = true
+      showFoodChange.value = true
+      setTimeout(() => {
+        foodPulse.value = false
+      }, 400)
+      setTimeout(() => {
+        showFoodChange.value = false
+      }, 1200)
+    }
+  }
+)
 </script>
 
 <template>
@@ -41,10 +62,23 @@ const weatherClass = computed(() => {
     </div>
 
     <div class="flex items-center gap-4">
-      <div class="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-xl">
-        <span class="text-xl">🍒</span>
-        <span class="text-white font-bold text-lg">{{ state.foodStock }}</span>
+      <div class="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-xl relative overflow-hidden">
+        <span class="text-xl" :class="{ 'animate-bounce': foodPulse }">🍒</span>
+        <span
+          class="text-white font-bold text-lg transition-all duration-200"
+          :class="{ 'scale-125 text-yellow-300': foodPulse }"
+        >
+          {{ state.foodStock }}
+        </span>
         <span class="text-white/70 text-xs">食物</span>
+        <Transition name="food-change">
+          <span
+            v-if="showFoodChange && foodChange > 0"
+            class="absolute -top-1 right-2 text-sm font-bold text-green-400 animate-food-pop"
+          >
+            +{{ foodChange }}
+          </span>
+        </Transition>
       </div>
 
       <div class="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-xl">

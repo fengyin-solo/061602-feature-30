@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { Bird, Berry } from '@/types/game'
+import type { Bird, Berry, CollectFeedback, ComboState } from '@/types/game'
 import BirdSprite from './BirdSprite.vue'
 import BerryItem from './BerryItem.vue'
-import { STAGE_NAMES } from '@/utils/constants'
+import { STAGE_NAMES, BERRY_COLORS } from '@/utils/constants'
 
 const props = defineProps<{
   birds: Bird[]
   berries: Berry[]
   selectedBirdId?: string
+  combo: ComboState
+  collectFeedbacks: CollectFeedback[]
 }>()
 
 const emit = defineEmits<{
@@ -26,6 +28,21 @@ const displayBirds = computed(() => {
     return { bird, x, y, idx }
   })
 })
+
+const getFeedbackColorClass = (feedback: CollectFeedback) => {
+  if (feedback.isComboBonus) return 'text-orange-400'
+  switch (feedback.type) {
+    case 'golden': return 'text-yellow-400'
+    case 'blue': return 'text-blue-400'
+    default: return 'text-red-400'
+  }
+}
+
+const getFeedbackTextClass = (feedback: CollectFeedback) => {
+  if (feedback.combo >= 5) return 'text-2xl'
+  if (feedback.combo >= 3) return 'text-xl'
+  return 'text-lg'
+}
 </script>
 
 <template>
@@ -137,8 +154,27 @@ const displayBirds = computed(() => {
           :value="berry.value"
           :x="berry.x"
           :y="berry.y"
+          :combo="combo.count"
           @collect="emit('collectBerry', berry.id)"
         />
+      </div>
+
+      <div
+        v-for="feedback in collectFeedbacks"
+        :key="feedback.id"
+        class="absolute -translate-x-1/2 -translate-y-1/2 font-bold pointer-events-none z-30
+               animate-float-up drop-shadow-lg select-none whitespace-nowrap"
+        :class="[getFeedbackColorClass(feedback), getFeedbackTextClass(feedback)]"
+        :style="{
+          left: `${feedback.x + (feedback.isComboBonus ? 10 : 0)}%`,
+          top: `${feedback.y - 5}%`,
+        }"
+      >
+        <span v-if="feedback.isComboBonus" class="mr-0.5">🔥</span>
+        +{{ feedback.value }}
+        <span v-if="feedback.combo >= 2 && !feedback.isComboBonus" class="ml-1 text-orange-400 text-sm">
+          {{ feedback.combo }}连击!
+        </span>
       </div>
     </div>
   </div>

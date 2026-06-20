@@ -60,6 +60,21 @@ export const BERRY_EMOJI: Record<BerryType, string> = {
   golden: '✨',
 }
 
+export const COMBO_TIME_WINDOW = 1200
+export const COMBO_MISCLICK_THRESHOLD = 80
+export const COMBO_MULTIPLIERS: Record<number, number> = {
+  0: 1,
+  1: 1,
+  2: 1.1,
+  3: 1.2,
+  4: 1.35,
+  5: 1.5,
+  6: 1.75,
+  7: 2.0,
+}
+export const MAX_COMBO_MULTIPLIER = 2.0
+export const COLLECT_FEEDBACK_LIFETIME = 1500
+
 export const WEATHER_CHANGE_INTERVAL = 25000
 
 export const WEATHER_EFFECTS: Record<Weather, WeatherEffect> = {

@@ -125,3 +125,97 @@ body {
 .progress-gradient-fear {
   background: linear-gradient(90deg, #8b5cf6 0%, #a78bfa 100%);
 }
+
+@keyframes berryCollect {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  50% { transform: translate(-50%, -50%) scale(1.3); opacity: 0.8; }
+  100% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+}
+
+.animate-berry-collect {
+  animation: berryCollect 0.3s ease-out forwards;
+}
+
+@keyframes ripple {
+  0% { transform: scale(0); opacity: 1; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+.animate-ripple {
+  animation: ripple 0.5s ease-out forwards;
+}
+
+@keyframes floatUp {
+  0% { transform: translate(-50%, -50%) translateY(0) scale(0.5); opacity: 0; }
+  20% { transform: translate(-50%, -50%) translateY(-10px) scale(1.2); opacity: 1; }
+  100% { transform: translate(-50%, -50%) translateY(-60px) scale(1); opacity: 0; }
+}
+
+.animate-float-up {
+  animation: floatUp 1.2s ease-out forwards;
+}
+
+@keyframes bounceIn {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-bounce-in {
+  animation: bounceIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes foodPop {
+  0% { transform: translateY(0) scale(0.5); opacity: 0; }
+  30% { transform: translateY(-10px) scale(1.2); opacity: 1; }
+  100% { transform: translateY(-30px) scale(0.8); opacity: 0; }
+}
+
+.animate-food-pop {
+  animation: foodPop 1s ease-out forwards;
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
+  50% { box-shadow: 0 0 40px rgba(255, 215, 0, 0.9), 0 0 60px rgba(255, 215, 0, 0.5); }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 1.5s ease-in-out infinite;
+}
+
+@keyframes popIn {
+  0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+  70% { transform: translate(-50%, -50%) scale(1.1); }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+.animate-pop-in {
+  animation: popIn 0.35s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.combo-enter-active,
+.combo-leave-active {
+  transition: all 0.3s ease;
+}
+
+.combo-enter-from {
+  opacity: 0;
+  transform: translate(-50%, -20px) scale(0.8);
+}
+
+.combo-leave-to {
+  opacity: 0;
+  transform: translate(-50%, -10px) scale(0.9);
+}
+
+.food-change-enter-active,
+.food-change-leave-active {
+  transition: all 0.2s ease;
+}
+
+.food-change-enter-from,
+.food-change-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
+}

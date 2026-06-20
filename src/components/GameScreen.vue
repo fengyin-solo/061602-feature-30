@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { watch, onMounted } from 'vue'
+import { watch, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useGameState } from '@/composables/useGameState'
 import StatusBar from './StatusBar.vue'
@@ -7,7 +7,7 @@ import NestScene from './NestScene.vue'
 import WeatherOverlay from './WeatherOverlay.vue'
 import BirdCard from './BirdCard.vue'
 import EventModal from './EventModal.vue'
-import { WEATHER_COLORS } from '@/utils/constants'
+import { WEATHER_COLORS, COMBO_MULTIPLIERS } from '@/utils/constants'
 
 const router = useRouter()
 const {
@@ -15,6 +15,24 @@ const {
   collectBerry, feedBird, calmBird, buryBird,
   releaseBirds, keepAndBreed, returnToStart, tryLoadGame,
 } = useGameState()
+
+const comboText = computed(() => {
+  const count = state.combo.count
+  if (count >= 7) return '🔥 超级连击!'
+  if (count >= 5) return '⚡ 完美连击!'
+  if (count >= 3) return '✨ 连击中!'
+  return ''
+})
+
+const comboMultiplierText = computed(() => {
+  const mult = state.combo.multiplier
+  if (mult > 1) return `×${mult.toFixed(1)} 倍率`
+  return ''
+})
+
+const showCombo = computed(() => {
+  return state.combo.count >= 2 && Date.now() - state.combo.lastCollectAt < 1200
+})
 
 onMounted(() => {
   if (state.phase === 'start') {
@@ -82,12 +100,33 @@ const handleCollect = (id: string) => {
             :birds="state.birds"
             :berries="state.berries"
             :selected-bird-id="state.selectedBirdId"
+            :combo="state.combo"
+            :collect-feedbacks="state.collectFeedbacks"
             @select-bird="handleSelectBird"
             @collect-berry="handleCollect"
           />
+
+          <Transition name="combo">
+            <div
+              v-if="showCombo"
+              class="absolute top-3 left-1/2 -translate-x-1/2 z-30"
+            >
+              <div class="glass rounded-2xl px-6 py-3 bg-gradient-to-r from-orange-500/80 to-red-500/80 backdrop-blur-md border border-orange-300/50 shadow-xl">
+                <div class="text-center">
+                  <div class="text-white font-bold text-xl animate-pulse">
+                    {{ comboText }}
+                  </div>
+                  <div v-if="comboMultiplierText" class="text-yellow-200 text-sm font-semibold">
+                    {{ comboMultiplierText }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Transition>
+
           <div class="absolute bottom-3 left-1/2 -translate-x-1/2 glass rounded-xl px-4 py-2 text-xs text-white/80 flex items-center gap-2">
             <span class="animate-sparkle">✨</span>
-            点击闪烁的浆果收集食物！
+            快速连续点击获得连击加成！
             <span class="animate-sparkle" style="animation-delay: 0.5s">✨</span>
           </div>
         </div>
